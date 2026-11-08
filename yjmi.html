@@ -1,0 +1,609 @@
+<title>YJMI</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Teko:wght@500;600;700&family=Rajdhani:wght@500;600;700&family=Share+Tech+Mono&display=swap">
+<style>
+/* Layout: wordmark + three live counters on top, hazard-tape divider, then two columns on desktop
+   (my drop code, shoot pad | squad board, kill feed) that stack on a phone. Single dark look by design. */
+:root {
+  --bg: #0e1113;
+  --panel: #151a1d;
+  --line: #2a3238;
+  --line2: #3b454d;
+  --fg: #ebe7da;
+  --mute: #98a1a8;
+  --gold: #f2b705;
+  --gold-fg: #14110a;
+  --olive: #7f8f45;
+  --alive: #9bd14f;
+  --red: #e4483a;
+  --display: 'Teko', 'Impact', 'Arial Narrow', sans-serif;
+  --body: 'Rajdhani', 'Arial Narrow', 'Segoe UI', Arial, sans-serif;
+  --mono: 'Share Tech Mono', ui-monospace, Menlo, Consolas, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { background: var(--bg); }
+body {
+  margin: 0; color: var(--fg); font-family: var(--body); font-size: 18px; line-height: 1.3; font-weight: 500;
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(900px 420px at 85% -5%, #222c32 0%, transparent 65%),
+    repeating-linear-gradient(135deg, rgba(255,255,255,.028) 0 1px, transparent 1px 16px);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 18px 48px;
+}
+.wrap { max-width: 1080px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+/* header */
+.top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px 28px; }
+.logo { font-family: var(--display); font-weight: 700; font-size: clamp(64px, 14vw, 104px); line-height: .8; letter-spacing: .06em; margin: 0; text-transform: uppercase; }
+.logo i { font-style: normal; color: var(--gold); }
+.tag { font-family: var(--mono); font-size: 13px; letter-spacing: .22em; text-transform: uppercase; color: var(--mute); margin-top: 10px; }
+.stats { display: flex; gap: 10px; flex-wrap: wrap; }
+.stat { background: var(--panel); border: 1px solid var(--line); border-top: 3px solid var(--line2); padding: 6px 14px 4px; min-width: 104px; }
+.stat b { display: block; font-family: var(--display); font-weight: 600; font-size: 54px; line-height: .95; font-variant-numeric: tabular-nums; }
+.stat span { font-family: var(--mono); font-size: 12px; letter-spacing: .18em; text-transform: uppercase; color: var(--mute); }
+.stat.alive { border-top-color: var(--alive); } .stat.alive b { color: var(--alive); }
+.stat.out { border-top-color: var(--red); } .stat.out b { color: var(--red); }
+.tape { height: 10px; background: repeating-linear-gradient(-45deg, var(--gold) 0 14px, #0b0d0e 14px 28px); opacity: .9; }
+
+/* layout */
+.cols { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; align-items: start; }
+@media (min-width: 900px) { .cols { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+.col { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+
+.panel { position: relative; background: var(--panel); border: 1px solid var(--line); padding: 18px 18px 20px; min-width: 0; }
+.panel::before, .panel::after { content: ""; position: absolute; width: 16px; height: 16px; border: 3px solid var(--gold); pointer-events: none; }
+.panel::before { top: -2px; left: -2px; border-right: 0; border-bottom: 0; }
+.panel::after { bottom: -2px; right: -2px; border-left: 0; border-top: 0; }
+h2 { font-family: var(--display); font-weight: 600; font-size: 28px; letter-spacing: .1em; text-transform: uppercase; margin: 0 0 12px; display: flex; align-items: center; justify-content: space-between; gap: 10px; line-height: 1; }
+h2 small { font-family: var(--mono); font-weight: 400; font-size: 12px; letter-spacing: .14em; color: var(--mute); }
+p { margin: 0 0 10px; }
+.mute { color: var(--mute); }
+.legend { font-family: var(--mono); font-size: 12px; letter-spacing: .16em; text-transform: uppercase; color: var(--mute); }
+
+.btn {
+  font-family: var(--display); font-weight: 600; font-size: 21px; letter-spacing: .1em; text-transform: uppercase; line-height: 1;
+  background: transparent; color: var(--fg); border: 1px solid var(--line2); padding: 10px 16px 8px; min-height: 44px; cursor: pointer; border-radius: 0;
+}
+.btn:hover { border-color: var(--gold); color: var(--gold); }
+.btn.gold { background: var(--gold); color: var(--gold-fg); border-color: var(--gold); }
+.btn.gold:hover { background: #ffc61f; color: var(--gold-fg); }
+.btn.sm { font-size: 17px; min-height: 36px; padding: 7px 11px 5px; }
+.row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+input[type=text] {
+  font-family: var(--body); font-weight: 600; font-size: 19px; color: var(--fg); background: #0b0e10; border: 1px solid var(--line2);
+  padding: 9px 11px; min-width: 0; width: 100%; border-radius: 0;
+}
+label.f { display: flex; flex-direction: column; gap: 5px; flex: 1 1 140px; min-width: 0; }
+
+/* my card */
+.idcard { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 190px); gap: 16px; align-items: center; }
+@media (max-width: 470px) { .idcard { grid-template-columns: minmax(0, 1fr); } .idcard .mkwrap { max-width: 210px; margin: 0 auto; } }
+.code { font-family: var(--mono); font-size: clamp(64px, 17vw, 92px); line-height: 1; letter-spacing: .14em; color: var(--gold); margin: 2px 0 6px; }
+.mkwrap { background: #fff; padding: 0; width: 100%; }
+.mk { display: block; width: 100%; height: auto; }
+.steps { margin: 14px 0 0; padding-left: 22px; display: flex; flex-direction: column; gap: 6px; color: var(--fg); }
+.steps li::marker { font-family: var(--mono); color: var(--gold); }
+
+/* shoot pad */
+.padwrap { display: grid; grid-template-columns: minmax(0, 250px) minmax(0, 1fr); gap: 18px; align-items: center; }
+@media (max-width: 520px) { .padwrap { grid-template-columns: minmax(0, 1fr); } .pad { margin: 0 auto; } }
+.pad { background: #fff; padding: 10px; width: 100%; max-width: 250px; border: 1px solid var(--line2); }
+.grid5 { display: grid; grid-template-columns: repeat(5, 1fr); }
+.cell { aspect-ratio: 1; display: block; border: 0; padding: 0; margin: 0; border-radius: 0; }
+.cell.ring { background: #111; }
+.cell.bit { background: #fff; box-shadow: inset 0 0 0 1px #cfcfcf; cursor: pointer; }
+.cell.bit[aria-pressed="true"] { background: #111; box-shadow: inset 0 0 0 1px #111; }
+.cell.bit:hover { box-shadow: inset 0 0 0 3px var(--gold); }
+.readout { font-family: var(--mono); font-size: 34px; letter-spacing: .14em; line-height: 1; margin: 4px 0 12px; }
+.readout.bad { color: var(--mute); }
+.shoot { width: 100%; font-size: 44px; padding: 16px 16px 12px; display: flex; align-items: center; justify-content: center; gap: 12px; letter-spacing: .16em; }
+.shoot svg { width: 34px; height: 34px; flex: none; }
+.result { margin-top: 12px; padding: 9px 12px; border-left: 4px solid var(--line2); background: #0f1316; font-weight: 600; min-height: 44px; }
+.result.hit { border-left-color: var(--red); color: #ffd7d2; }
+.result.miss { border-left-color: var(--mute); color: var(--mute); }
+.result.warn { border-left-color: var(--gold); }
+.panel.flash { animation: flash .6s ease-out; }
+@keyframes flash { 0% { box-shadow: 0 0 0 0 rgba(228,72,58,.0), inset 0 0 60px rgba(228,72,58,.5); } 100% { box-shadow: none; } }
+
+/* squad board */
+.winner { background: var(--gold); color: var(--gold-fg); padding: 10px 14px 6px; margin-bottom: 12px; }
+.winner b { display: block; font-family: var(--display); font-size: 40px; font-weight: 700; line-height: 1; letter-spacing: .06em; text-transform: uppercase; overflow-wrap: anywhere; }
+.winner span { font-family: var(--mono); font-size: 12px; letter-spacing: .2em; text-transform: uppercase; }
+.list { list-style: none; margin: 0; padding: 0; }
+.prow { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 10px; align-items: center; padding: 9px 0; border-top: 1px solid var(--line); }
+.prow:first-child { border-top: 0; }
+.prow .nm { font-weight: 700; font-size: 21px; overflow-wrap: anywhere; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.prow.out .nm span.t { text-decoration: line-through; color: var(--mute); }
+.chip { font-family: var(--mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; border: 1px solid var(--line2); color: var(--mute); padding: 1px 6px; }
+.chip.you { color: var(--gold); border-color: var(--gold); }
+.st { font-family: var(--display); font-weight: 600; font-size: 20px; letter-spacing: .12em; display: flex; align-items: center; gap: 7px; min-width: 112px; justify-content: flex-end; }
+.st::before { content: ""; width: 10px; height: 10px; background: currentColor; }
+.st.alive { color: var(--alive); } .st.out { color: var(--red); }
+.mini { width: 34px; background: #fff; display: block; }
+.x { background: none; border: 0; color: var(--mute); font-size: 22px; line-height: 1; cursor: pointer; padding: 4px 6px; min-width: 32px; min-height: 32px; }
+.x:hover { color: var(--red); }
+.add { margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--line2); }
+.feed { display: flex; flex-direction: column; gap: 8px; }
+.feed div { display: flex; gap: 12px; align-items: baseline; }
+.feed .t { font-family: var(--mono); font-size: 13px; color: var(--mute); flex: none; }
+.feed b { color: var(--red); font-weight: 700; }
+.how { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 700px) { .how { grid-template-columns: minmax(0, 1fr); } }
+.how div { border-top: 3px solid var(--gold); padding-top: 8px; }
+.how b { font-family: var(--display); font-size: 26px; letter-spacing: .08em; text-transform: uppercase; font-weight: 600; display: block; line-height: 1; margin-bottom: 4px; }
+.foot { font-family: var(--mono); font-size: 12px; letter-spacing: .1em; color: var(--mute); text-transform: uppercase; }
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(18px + env(safe-area-inset-bottom, 0px)); background: var(--gold); color: var(--gold-fg); font-weight: 700; padding: 10px 16px; z-index: 10; max-width: min(92vw, 480px); }
+/* zone */
+select {
+  font-family: var(--body); font-weight: 600; font-size: 19px; color: var(--fg); background: #0b0e10; border: 1px solid var(--line2);
+  padding: 9px 11px; min-width: 0; width: 100%; border-radius: 0;
+}
+.zonegrid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; align-items: start; }
+@media (min-width: 760px) { .zonegrid { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); } }
+.mapwrap { border: 1px solid var(--line2); background: #0b0e10; width: 100%; max-width: 560px; }
+.mapwrap svg { display: block; width: 100%; height: auto; }
+.ztime { font-family: var(--display); font-weight: 600; font-size: clamp(72px, 16vw, 104px); line-height: .9; font-variant-numeric: tabular-nums; letter-spacing: .04em; margin: 4px 0 10px; }
+.ztime.closing { color: #4aa3ff; }
+.zbar { height: 6px; background: #0b0e10; border: 1px solid var(--line2); margin-bottom: 14px; }
+.zbar i { display: block; height: 100%; width: 0; background: var(--gold); }
+.zbar.closing i { background: #4aa3ff; }
+.zdata { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-bottom: 14px; }
+.zdata div { border-top: 3px solid var(--line2); padding-top: 5px; }
+.zdata b { display: block; font-family: var(--display); font-weight: 600; font-size: 30px; line-height: 1; margin-top: 2px; font-variant-numeric: tabular-nums; }
+.zkey { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 10px; font-family: var(--mono); font-size: 12px; letter-spacing: .08em; color: var(--mute); text-transform: uppercase; }
+.zkey span::before { content: ""; display: inline-block; width: 12px; height: 12px; margin-right: 6px; vertical-align: -1px; border: 2px solid; }
+.zkey .kb::before { border-color: #4aa3ff; background: rgba(31,111,224,.4); }
+.zkey .kw::before { border-color: #fff; }
+.practice { margin-top: 10px; }
+.pcard { display: flex; gap: 14px; align-items: center; background: #0f1316; border: 1px dashed var(--line2); padding: 10px; }
+.pcard .pm { width: 84px; flex: none; background: #fff; }
+.pcard p { margin: 4px 0 8px; font-size: 16px; }
+@media (prefers-reduced-motion: reduce) { .panel.flash { animation: none; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1 class="logo">YJ<i>M</i>I</h1>
+      <div class="tag">Real-life battle royale</div>
+    </div>
+    <div class="stats" aria-live="polite">
+      <div class="stat"><b id="n-all">0</b><span>Players</span></div>
+      <div class="stat alive"><b id="n-alive">0</b><span>Alive</span></div>
+      <div class="stat out"><b id="n-out">0</b><span>Eliminated</span></div>
+    </div>
+  </header>
+  <div class="tape" aria-hidden="true"></div>
+
+  <section class="panel" aria-labelledby="h-zone">
+    <h2 id="h-zone"><span>Zone</span><small id="zone-sub">Not started</small></h2>
+    <div class="zonegrid">
+      <div>
+        <div class="mapwrap"><svg id="map" viewBox="0 0 400 400" role="img" aria-label="Tactical map showing the safe zone and the next zone"></svg></div>
+        <div class="zkey"><span class="kb">Danger zone</span><span class="kw">Next safe zone</span></div>
+      </div>
+      <div>
+        <div class="legend" id="z-label">Zone not started</div>
+        <div class="ztime" id="z-time">--:--</div>
+        <div class="zbar" id="z-barwrap"><i id="z-bar"></i></div>
+        <div class="zdata">
+          <div><span class="legend">Safe radius</span><b id="z-now">--</b></div>
+          <div><span class="legend">Next zone</span><b id="z-next">--</b></div>
+          <div><span class="legend">Phase</span><b id="z-phase">--</b></div>
+        </div>
+        <div class="row">
+          <label class="f" style="flex-basis:120px"><span class="legend">Start radius (m)</span><input type="text" inputmode="numeric" id="z-r" maxlength="4" autocomplete="off"></label>
+          <label class="f" style="flex-basis:120px"><span class="legend">Shrinks every</span>
+            <select id="z-i"><option value="1">1 min</option><option value="2">2 min</option><option value="3">3 min</option><option value="5">5 min</option><option value="10">10 min</option></select></label>
+        </div>
+        <div class="row" style="margin-top:12px"><button class="btn gold" id="z-start" type="button">Start zone</button></div>
+        <p class="mute" style="margin:12px 0 0;font-size:16px">The zone holds, then closes in over the last third of each phase. This is a schematic map: real street maps and GPS are not available in this view.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="cols">
+    <div class="col">
+      <section class="panel" aria-labelledby="h-id">
+        <h2 id="h-id"><span>Your drop code</span><small>Stick it on your back</small></h2>
+        <div class="idcard">
+          <div>
+            <div class="legend">Code</div>
+            <div class="code" id="mycode">--</div>
+            <label class="f"><span class="legend">Callsign</span><input type="text" id="myname" maxlength="16" autocomplete="off" spellcheck="false"></label>
+            <div class="row" style="margin-top:12px">
+              <button class="btn sm" id="b-copy" type="button">Copy code</button>
+              <button class="btn sm" id="b-save" type="button">Save marker</button>
+              <button class="btn sm" id="b-new" type="button">New marker</button>
+            </div>
+          </div>
+          <div class="mkwrap" id="mymarker"></div>
+        </div>
+        <ol class="steps">
+          <li>Print this marker about 40 cm wide, or draw it on white card: black ring, then fill the squares shown.</li>
+          <li>Keep a white border around it and wear it flat on your back.</li>
+          <li>Anyone who draws your exact pattern and hits Shoot eliminates you.</li>
+        </ol>
+      </section>
+
+      <section class="panel" id="shootpanel" aria-labelledby="h-shoot">
+        <h2 id="h-shoot"><span>Shoot</span><small>Draw their marker</small></h2>
+        <div class="padwrap">
+          <div class="pad"><div class="grid5" id="pad" role="group" aria-label="Marker drawing pad"></div></div>
+          <div>
+            <div class="legend">Pattern code</div>
+            <div class="readout" id="padcode">--</div>
+            <button class="btn gold shoot" id="b-shoot" type="button">
+              <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><circle cx="16" cy="16" r="9"/><path d="M16 1v8M16 23v8M1 16h8M23 16h8"/></svg>
+              Shoot
+            </button>
+            <div class="row" style="margin-top:10px"><button class="btn sm" id="b-clear" type="button">Clear pad</button></div>
+          </div>
+        </div>
+        <div class="result miss" id="result" role="status">Tap the squares inside the black ring to copy the marker you saw, then press Shoot.</div>
+        <div class="practice" id="practice" hidden></div>
+      </section>
+    </div>
+
+    <div class="col">
+      <section class="panel" aria-labelledby="h-board">
+        <h2 id="h-board"><span>Squad board</span><small id="board-sub"></small></h2>
+        <div id="winner"></div>
+        <ul class="list" id="players"></ul>
+        <form class="add" id="addform" autocomplete="off">
+          <div class="legend" style="margin-bottom:8px">Add a friend with their code</div>
+          <div class="row">
+            <label class="f"><span class="legend">Name</span><input type="text" id="addname" maxlength="16" spellcheck="false"></label>
+            <label class="f" style="flex-basis:90px"><span class="legend">Code</span><input type="text" id="addcode" maxlength="2" spellcheck="false" autocapitalize="characters" placeholder="K7" style="font-family:var(--mono);letter-spacing:.2em;text-transform:uppercase"></label>
+            <button class="btn sm" type="submit" style="align-self:flex-end">Add</button>
+          </div>
+        </form>
+        <div class="row" style="margin-top:14px">
+          <button class="btn sm" id="b-reset" type="button">New round</button>
+          <button class="btn sm" id="b-demo" type="button" hidden>Remove demo players</button>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="h-feed">
+        <h2 id="h-feed"><span>Kill feed</span></h2>
+        <div class="feed" id="feed" aria-live="polite"></div>
+      </section>
+    </div>
+  </div>
+
+  <section class="panel" aria-labelledby="h-how">
+    <h2 id="h-how"><span>How a round works</span></h2>
+    <div class="how">
+      <div><b>Get your code</b>Open YJMI and your marker is ready. It stays the same when you come back.</div>
+      <div><b>Wear it</b>Print or draw the marker and stick it on your back where others can see it.</div>
+      <div><b>Draw and shoot</b>Copy a marker you spot onto the pad and press Shoot. The player who wears it is out.</div>
+    </div>
+  </section>
+  <div class="foot">Prototype. No server yet: players and results are kept on this device only.</div>
+</div>
+<div class="toast" id="toast" hidden role="status"></div>
+
+<script>
+(function () {
+  'use strict';
+  var $ = function (s) { return document.querySelector(s); };
+  var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+
+  /* ---------- marker maths: inner 3x3 grid, bit = row*3 + col ---------- */
+  var ALPHA = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+  function rot(b) { var o = 0; for (var r = 0; r < 3; r++) for (var c = 0; c < 3; c++) { if ((b >> ((2 - c) * 3 + r)) & 1) o |= 1 << (r * 3 + c); } return o; }
+  function pop(b) { var n = 0; while (b) { n += b & 1; b >>= 1; } return n; }
+  function dist(a, b) { var m = 99, x = b; for (var i = 0; i < 4; i++) { m = Math.min(m, pop(a ^ x)); x = rot(x); } return m; }
+  function valid(b) { var r = rot(b); return pop(b) >= 3 && pop(b) <= 6 && b !== r && b !== rot(r); }
+  function codeOf(b) { return ALPHA[b >> 5] + ALPHA[b & 31]; }
+  function parseCode(s) {
+    s = String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (s.length !== 2) return null;
+    var i = ALPHA.indexOf(s[0]), j = ALPHA.indexOf(s[1]);
+    if (i < 0 || j < 0 || i > 15) return null;
+    return (i << 5) | j;
+  }
+  function rnd(n) {
+    if (window.crypto && crypto.getRandomValues) { var a = new Uint32Array(1); crypto.getRandomValues(a); return a[0] % n; }
+    return Math.floor(Math.random() * n);
+  }
+  function newBits(taken) {
+    for (var minD = 2; minD >= 1; minD--) {
+      for (var t = 0; t < 6000; t++) {
+        var b = rnd(512);
+        if (valid(b) && taken.every(function (x) { return dist(x, b) >= minD; })) return b;
+      }
+    }
+    return 0;
+  }
+  function svg(b, cls) {
+    var r = '';
+    for (var y = 0; y < 7; y++) for (var x = 0; x < 7; x++) {
+      var d = 0;
+      if (y >= 1 && y <= 5 && x >= 1 && x <= 5) d = (y === 1 || y === 5 || x === 1 || x === 5) ? 1 : (b >> ((y - 2) * 3 + (x - 2))) & 1;
+      if (d) r += '<rect x="' + x + '" y="' + y + '" width="1" height="1"/>';
+    }
+    return '<svg class="mk ' + (cls || '') + '" viewBox="0 0 7 7" shape-rendering="crispEdges" role="img" aria-label="Marker pattern"><rect width="7" height="7" fill="#ffffff"/><g fill="#111111">' + r + '</g></svg>';
+  }
+
+  /* ---------- state ---------- */
+  var KEY = 'yjmi-v1';
+  var DEMO = ['Viper', 'Kestrel', 'Nomad', 'Rook', 'Echo', 'Mamba', 'Havoc'];
+  var S = load() || init();
+  var pad = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+  var toastTimer, practiceOn = false;
+
+  function init() {
+    var taken = [], me = { id: 'me', name: 'Player', bits: 0, alive: true, me: true };
+    me.bits = newBits(taken); taken.push(me.bits);
+    var ps = [me];
+    DEMO.forEach(function (n, i) { var b = newBits(taken); taken.push(b); ps.push({ id: 'd' + i, name: n, bits: b, alive: true, demo: true }); });
+    return { players: ps, feed: [], t0: Date.now() };
+  }
+  function load() {
+    try {
+      var j = JSON.parse(localStorage.getItem(KEY));
+      if (j && Array.isArray(j.players) && j.players.some(function (p) { return p.me; })) return j;
+    } catch (e) { }
+    return null;
+  }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { } }
+  function me() { return S.players.filter(function (p) { return p.me; })[0]; }
+  function toast(msg) {
+    var t = $('#toast'); t.textContent = msg; t.hidden = false;
+    clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.hidden = true; }, 2600);
+  }
+  function mmss(ms) { ms = Math.max(0, Math.round(ms / 1000)); return String(Math.floor(ms / 60)).padStart(2, '0') + ':' + String(ms % 60).padStart(2, '0'); }
+  function takenBits() { return S.players.map(function (p) { return p.bits; }); }
+
+  /* ---------- render ---------- */
+  function render() {
+    var all = S.players.length, alive = S.players.filter(function (p) { return p.alive; }).length;
+    $('#n-all').textContent = all; $('#n-alive').textContent = alive; $('#n-out').textContent = all - alive;
+    var m = me();
+    $('#mycode').textContent = codeOf(m.bits);
+    $('#mymarker').innerHTML = svg(m.bits);
+    var nm = $('#myname'); if (document.activeElement !== nm) nm.value = m.name;
+    $('#board-sub').textContent = alive + ' of ' + all + ' alive';
+
+    var w = '';
+    if (all > 1 && alive === 1) {
+      var last = S.players.filter(function (p) { return p.alive; })[0];
+      w = '<div class="winner"><span>Last one standing</span><b>' + esc(last.name) + '</b></div>';
+    }
+    $('#winner').innerHTML = w;
+
+    var ord = S.players.slice().sort(function (a, b) { return (b.alive ? 1 : 0) - (a.alive ? 1 : 0); });
+    $('#players').innerHTML = ord.map(function (p) {
+      return '<li class="prow ' + (p.alive ? 'alive' : 'out') + '"><span class="nm"><span class="t">' + esc(p.name) + '</span>' +
+        (p.me ? '<span class="chip you">You</span>' : '') + (p.demo ? '<span class="chip">Demo</span>' : '') + '</span>' +
+        '<span class="st ' + (p.alive ? 'alive' : 'out') + '">' + (p.alive ? 'Alive' : 'Eliminated') + '</span>' +
+        (p.me ? '<span></span>' : '<button class="x" type="button" data-rm="' + esc(p.id) + '" aria-label="Remove ' + esc(p.name) + '">&times;</button>') + '</li>';
+    }).join('');
+    $('#b-demo').hidden = !S.players.some(function (p) { return p.demo; });
+
+    var dm = S.players.filter(function (p) { return p.demo && p.alive; })[0], pr = $('#practice');
+    if (!dm) { pr.hidden = true; practiceOn = false; }
+    else {
+      pr.hidden = false;
+      pr.innerHTML = practiceOn
+        ? '<div class="pcard"><div class="pm">' + svg(dm.bits) + '</div><div><div class="legend">Practice target</div><b>' + esc(dm.name) + '</b><p class="mute">A demo player, shown only so you can test a shot. Real players\' markers are never shown.</p><button class="btn sm" id="b-prac-hide" type="button">Hide</button></div></div>'
+        : '<button class="btn sm" id="b-prac" type="button">Show a practice target</button>';
+    }
+
+    $('#feed').innerHTML = S.feed.length
+      ? S.feed.slice(-12).reverse().map(function (f) { return '<div><span class="t">' + f.t + '</span><span>' + f.html + '</span></div>'; }).join('')
+      : '<span class="mute">No eliminations yet.</span>';
+  }
+
+  function drawPad() {
+    var h = '';
+    for (var r = 0; r < 5; r++) for (var c = 0; c < 5; c++) {
+      if (r === 0 || r === 4 || c === 0 || c === 4) h += '<span class="cell ring" aria-hidden="true"></span>';
+      else { var i = (r - 1) * 3 + (c - 1); h += '<button type="button" class="cell bit" data-i="' + i + '" aria-pressed="false" aria-label="Row ' + r + ', column ' + c + '"></button>'; }
+    }
+    $('#pad').innerHTML = h;
+  }
+  function padBits() { var b = 0; for (var i = 0; i < 9; i++) if (pad[i]) b |= 1 << i; return b; }
+  function syncPad() {
+    var cells = document.querySelectorAll('#pad .bit');
+    for (var i = 0; i < cells.length; i++) cells[i].setAttribute('aria-pressed', pad[+cells[i].getAttribute('data-i')] ? 'true' : 'false');
+    var b = padBits(), ro = $('#padcode');
+    if (valid(b)) { ro.textContent = codeOf(b); ro.className = 'readout'; }
+    else { ro.textContent = '--'; ro.className = 'readout bad'; }
+  }
+  function say(kind, html) { var r = $('#result'); r.className = 'result ' + kind; r.innerHTML = html; }
+
+  /* ---------- actions ---------- */
+  function shoot() {
+    var b = padBits();
+    if (!valid(b)) { say('warn', 'That is not a valid marker. Markers have between 3 and 6 dark squares and are never symmetric.'); return; }
+    var hit = S.players.filter(function (p) { return dist(p.bits, b) === 0; })[0];
+    if (!hit) { say('miss', 'Miss. Nobody in this round carries that marker.'); return; }
+    if (hit.me) { say('warn', 'That is your own marker.'); return; }
+    if (!hit.alive) { say('miss', esc(hit.name) + ' is already eliminated.'); return; }
+    hit.alive = false; if (hit.demo) practiceOn = false;
+    S.feed.push({ t: '+' + mmss(Date.now() - S.t0), html: esc(me().name) + ' eliminated <b>' + esc(hit.name) + '</b>' });
+    save(); render();
+    say('hit', 'Direct hit. <b>' + esc(hit.name) + '</b> is eliminated.');
+    var p = $('#shootpanel'); p.classList.remove('flash'); void p.offsetWidth; p.classList.add('flash');
+    pad = [0, 0, 0, 0, 0, 0, 0, 0, 0]; syncPad();
+  }
+  function saveMarker() {
+    var m = me(), cell = 160, c = document.createElement('canvas'); c.width = c.height = cell * 7;
+    var x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); x.fillStyle = '#111';
+    for (var yy = 0; yy < 7; yy++) for (var xx = 0; xx < 7; xx++) {
+      var d = 0;
+      if (yy >= 1 && yy <= 5 && xx >= 1 && xx <= 5) d = (yy === 1 || yy === 5 || xx === 1 || xx === 5) ? 1 : (m.bits >> ((yy - 2) * 3 + (xx - 2))) & 1;
+      if (d) x.fillRect(xx * cell, yy * cell, cell, cell);
+    }
+    var name = 'yjmi-marker-' + codeOf(m.bits) + '.png';
+    c.toBlob(function (blob) {
+      var done = false;
+      Promise.resolve().then(function () {
+        var cl = window.claude;
+        return cl && cl.use ? cl.use('downloads') : null;
+      }).then(function (dl) {
+        if (!dl) return null;
+        done = true;
+        return dl.save({ filename: name, data: blob }).then(function () { toast('Marker saved.'); });
+      }).catch(function (e) {
+        if (e && e.code === 'declined') return;
+        done = false;
+      }).then(function () {
+        if (done) return;
+        var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
+      });
+    }, 'image/png');
+  }
+
+  document.addEventListener('click', function (e) {
+    var t = e.target;
+    var bit = t.closest && t.closest('#pad .bit');
+    if (bit) { var i = +bit.getAttribute('data-i'); pad[i] = pad[i] ? 0 : 1; syncPad(); return; }
+    var rm = t.closest && t.closest('[data-rm]');
+    if (rm) {
+      var id = rm.getAttribute('data-rm');
+      S.players = S.players.filter(function (p) { return p.id !== id; });
+      save(); render(); return;
+    }
+    var id2 = t.closest && t.closest('button');
+    if (!id2) return;
+    switch (id2.id) {
+      case 'b-shoot': shoot(); break;
+      case 'b-prac': practiceOn = true; render(); break;
+      case 'b-prac-hide': practiceOn = false; render(); break;
+      case 'z-start': startStopZone(); break;
+      case 'b-clear': pad = [0, 0, 0, 0, 0, 0, 0, 0, 0]; syncPad(); say('miss', 'Pad cleared.'); break;
+      case 'b-new': {
+        var m = me(), others = S.players.filter(function (p) { return !p.me; }).map(function (p) { return p.bits; });
+        m.bits = newBits(others); m.alive = true; save(); render(); toast('New marker ' + codeOf(m.bits) + '. Replace the old one on your back.'); break;
+      }
+      case 'b-copy': {
+        var c = codeOf(me().bits);
+        try { navigator.clipboard.writeText(c).then(function () { toast('Code ' + c + ' copied.'); }, function () { toast('Your code is ' + c); }); }
+        catch (err) { toast('Your code is ' + c); }
+        break;
+      }
+      case 'b-save': saveMarker(); break;
+      case 'b-reset':
+        S.players.forEach(function (p) { p.alive = true; }); S.feed = []; S.t0 = Date.now(); save(); render(); say('miss', 'New round. Everyone is back in.'); break;
+      case 'b-demo':
+        S.players = S.players.filter(function (p) { return !p.demo; }); save(); render(); break;
+    }
+  });
+  $('#myname').addEventListener('input', function (e) {
+    var m = me(); m.name = e.target.value.trim().slice(0, 16) || 'Player'; save();
+    var rows = $('#players'); // refresh names without touching the input
+    var keep = document.activeElement; render(); if (keep && keep.focus) keep.focus();
+  });
+  $('#addform').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var name = $('#addname').value.trim().slice(0, 16), b = parseCode($('#addcode').value);
+    if (!name) { toast('Enter a name.'); return; }
+    if (b === null || !valid(b)) { toast('That code is not valid. Codes have 2 characters, like K7.'); return; }
+    if (S.players.some(function (p) { return dist(p.bits, b) === 0; })) { toast('Someone already has that marker.'); return; }
+    S.players.push({ id: 'p' + Date.now().toString(36) + rnd(999), name: name, bits: b, alive: true });
+    save(); render(); $('#addname').value = ''; $('#addcode').value = ''; toast(name + ' joined.');
+  });
+  $('#addcode').addEventListener('input', function (e) { e.target.value = e.target.value.toUpperCase(); });
+
+  /* ---------- zone: a schematic map, a holding period, then a closing phase ---------- */
+  var ZP = 5, HOLD = 0.7;
+  function mulberry(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; var t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  function lerp(a, b, t) { return a + (b - a) * t; }
+  function ensureZone() {
+    if (!S.zone || typeof S.zone.r0 !== 'number') S.zone = { r0: 300, interval: 3, seed: 1 + rnd(2000000000), start: null };
+    $('#z-r').value = S.zone.r0; $('#z-i').value = String(S.zone.interval);
+  }
+  function circlesOf(Z) {
+    var R = mulberry(Z.seed ^ 0x9e3779b1), out = [{ x: 0, y: 0, r: Z.r0 }];
+    for (var i = 1; i <= ZP; i++) {
+      var p = out[i - 1], r = Z.r0 * Math.pow(0.62, i), room = p.r - r, a = R() * 6.2832, off = room * (0.35 + 0.6 * R());
+      out.push({ x: p.x + Math.cos(a) * off, y: p.y + Math.sin(a) * off, r: r });
+    }
+    return out;
+  }
+  function zoneAt(Z, e) {
+    var C = circlesOf(Z), L = Z.interval * 60000, idx = Math.min(ZP, Math.floor(e / L));
+    if (idx >= ZP) return { mode: 'final', cur: C[ZP], next: null, idx: ZP, left: 0, frac: 1 };
+    var w = e - idx * L, hold = L * HOLD;
+    if (w < hold) return { mode: 'hold', cur: C[idx], next: C[idx + 1], idx: idx, left: hold - w, frac: w / hold };
+    var t = (w - hold) / (L - hold), a = C[idx], b = C[idx + 1];
+    return { mode: 'closing', cur: { x: lerp(a.x, b.x, t), y: lerp(a.y, b.y, t), r: lerp(a.r, b.r, t) }, next: b, idx: idx, left: L - w, frac: t };
+  }
+  function niceLen(max) { var L = [10, 20, 50, 100, 200, 500, 1000, 2000, 5000], best = L[0]; L.forEach(function (l) { if (l <= max) best = l; }); return best; }
+  function buildMap() {
+    var Z = S.zone, R = mulberry(Z.seed ^ 0x51ed), k = 400 / (Z.r0 * 2.3), s = '', i, j;
+    function rr(a, b) { return a + (b - a) * R(); }
+    function n(v) { return v.toFixed(0); }
+    s += '<defs><mask id="zmask"><rect width="400" height="400" fill="#fff"/><circle id="zhole" cx="200" cy="200" r="10" fill="#000"/></mask></defs>';
+    s += '<rect width="400" height="400" fill="#242c1c"/>';
+    for (i = 0; i < 6; i++) s += '<rect x="' + n(rr(0, 330)) + '" y="' + n(rr(0, 330)) + '" width="' + n(rr(40, 90)) + '" height="' + n(rr(30, 70)) + '" fill="#3a4025" opacity=".55"/>';
+    for (i = 0; i < 15; i++) s += '<ellipse cx="' + n(rr(10, 390)) + '" cy="' + n(rr(10, 390)) + '" rx="' + n(rr(14, 44)) + '" ry="' + n(rr(10, 34)) + '" fill="#324420" opacity=".9"/>';
+    var rv = 'M-10 ' + n(rr(60, 340)) + ' C 120 ' + n(rr(30, 370)) + ', 280 ' + n(rr(30, 370)) + ', 410 ' + n(rr(60, 340));
+    s += '<path d="' + rv + '" fill="none" stroke="#2a4354" stroke-width="12" stroke-linecap="round"/><path d="' + rv + '" fill="none" stroke="#3b6177" stroke-width="5" stroke-linecap="round"/>';
+    s += '<path d="M' + n(rr(60, 340)) + ' -10 C ' + n(rr(40, 360)) + ' 120, ' + n(rr(40, 360)) + ' 280, ' + n(rr(60, 340)) + ' 410" fill="none" stroke="#9b9068" stroke-width="2.5"/>';
+    s += '<path d="M-10 ' + n(rr(60, 340)) + ' C 130 ' + n(rr(40, 360)) + ', 270 ' + n(rr(40, 360)) + ', 410 ' + n(rr(60, 340)) + '" fill="none" stroke="#7d7455" stroke-width="1.6" stroke-dasharray="7 4"/>';
+    for (j = 0; j < 3; j++) {
+      var hx = rr(60, 340), hy = rr(60, 340);
+      for (i = 0; i < 9; i++) s += '<rect x="' + n(hx + rr(-30, 30)) + '" y="' + n(hy + rr(-26, 26)) + '" width="' + n(rr(5, 10)) + '" height="' + n(rr(5, 9)) + '" fill="#161a14" stroke="#6b7059" stroke-width=".6"/>';
+    }
+    for (i = 1; i < 8; i++) s += '<path d="M' + (i * 50) + ' 0V400M0 ' + (i * 50) + 'H400" stroke="#ffffff" stroke-opacity=".11" stroke-width="1"/>';
+    for (i = 0; i < 8; i++) s += '<text x="' + (25 + i * 50) + '" y="12" text-anchor="middle" font-family="Share Tech Mono, monospace" font-size="11" fill="#c8b98d" fill-opacity=".8">' + 'ABCDEFGH'[i] + '</text><text x="8" y="' + (29 + i * 50) + '" text-anchor="middle" font-family="Share Tech Mono, monospace" font-size="11" fill="#c8b98d" fill-opacity=".8">' + (i + 1) + '</text>';
+    s += '<rect width="400" height="400" fill="#1f6fe0" fill-opacity=".34" mask="url(#zmask)"/>';
+    s += '<circle id="zcur" cx="200" cy="200" r="10" fill="none" stroke="#4aa3ff" stroke-width="3"/>';
+    s += '<circle id="znext" cx="200" cy="200" r="10" fill="none" stroke="#ffffff" stroke-width="2.2"/>';
+    var len = niceLen(Z.r0 * 2.3 * 0.3), w = len * k;
+    s += '<g transform="translate(16 384)"><rect width="' + w.toFixed(1) + '" height="4" fill="#ebe7da"/><text y="-5" font-family="Share Tech Mono, monospace" font-size="11" fill="#ebe7da">' + len + ' m</text></g>';
+    s += '<g transform="translate(372 44)"><path d="M0 -16 L7 6 L0 2 L-7 6Z" fill="#f2b705"/><text y="22" text-anchor="middle" font-family="Share Tech Mono, monospace" font-size="12" fill="#f2b705">N</text></g>';
+    s += '<rect x=".5" y=".5" width="399" height="399" fill="none" stroke="#3b454d"/>';
+    $('#map').innerHTML = s;
+  }
+  function updateZone() {
+    var Z = S.zone; if (!Z) return;
+    var run = Z.start !== null, e = run ? Math.max(0, Date.now() - Z.start) : 0, st = zoneAt(Z, e), k = 400 / (Z.r0 * 2.3);
+    function put(id, c) {
+      var el = document.getElementById(id); if (!el) return;
+      el.setAttribute('cx', (200 + c.x * k).toFixed(2)); el.setAttribute('cy', (200 + c.y * k).toFixed(2)); el.setAttribute('r', Math.max(1, c.r * k).toFixed(2));
+    }
+    put('zhole', st.cur); put('zcur', st.cur);
+    var zn = document.getElementById('znext');
+    if (zn) { if (st.next) { put('znext', st.next); zn.setAttribute('visibility', 'visible'); } else zn.setAttribute('visibility', 'hidden'); }
+    var lab, time, cls = '', bar = st.frac * 100;
+    if (!run) { lab = 'Zone not started'; time = '--:--'; bar = 0; }
+    else if (st.mode === 'hold') { lab = 'Zone starts shrinking in'; time = mmss(st.left); }
+    else if (st.mode === 'closing') { lab = 'Zone is closing, stops in'; time = mmss(st.left); cls = 'closing'; }
+    else { lab = 'Final zone'; time = 'FINAL'; bar = 100; }
+    $('#z-label').textContent = lab; $('#z-time').textContent = time; $('#z-time').className = 'ztime ' + cls;
+    $('#z-barwrap').className = 'zbar ' + cls; $('#z-bar').style.width = bar.toFixed(1) + '%';
+    $('#z-now').textContent = Math.round(st.cur.r) + ' m';
+    $('#z-next').textContent = st.next ? Math.round(st.next.r) + ' m' : '--';
+    $('#z-phase').textContent = run ? (st.mode === 'final' ? 'Final' : (st.idx + 1) + ' / ' + ZP) : '--';
+    $('#zone-sub').textContent = run ? (st.mode === 'closing' ? 'Closing' : (st.mode === 'final' ? 'Final zone' : 'Holding')) : 'Not started';
+    var btn = $('#z-start'), txt = run ? 'Stop zone' : 'Start zone';
+    if (btn.textContent !== txt) btn.textContent = txt;
+    $('#z-r').disabled = run; $('#z-i').disabled = run;
+  }
+  function startStopZone() {
+    var Z = S.zone;
+    if (Z.start === null) { Z.seed = 1 + rnd(2000000000); Z.start = Date.now(); buildMap(); toast('Zone started.'); }
+    else { Z.start = null; toast('Zone stopped.'); }
+    save(); updateZone();
+  }
+  $('#z-r').addEventListener('change', function (e) {
+    var v = parseInt(e.target.value, 10); if (!(v >= 50)) v = 300; v = Math.min(3000, Math.max(50, v));
+    S.zone.r0 = v; e.target.value = v; buildMap(); save(); updateZone();
+  });
+  $('#z-i').addEventListener('change', function (e) { S.zone.interval = parseInt(e.target.value, 10) || 3; save(); updateZone(); });
+
+  ensureZone(); buildMap(); drawPad(); syncPad(); save(); render(); updateZone();
+  setInterval(updateZone, 250);
+})();
+</script>
